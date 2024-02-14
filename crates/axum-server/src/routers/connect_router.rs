@@ -13,11 +13,11 @@ pub fn new_connect_router() -> axum::Router {
 }
 
 async fn get_form_handler() -> Html<String> {
-    Html( ui_components::connect::get_form() )
+    Html( ui_components::connect::get_form_html() )
 }
 
 async fn post_form_handler(
     Form(form): Form<StartGameForm>
 ) -> Html<String> {
-    Html( ui_components::connect::accept_from(form.name) )
+    Html( ui_components::connect::accept_from_html(form.name) )
 }
