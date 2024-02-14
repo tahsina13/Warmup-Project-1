@@ -1,19 +1,53 @@
 use std::net::SocketAddr;
+
+use config::Config; 
+use once_cell::sync::Lazy;
+
 use axum::{
     extract::Request, 
     middleware::Next, 
     response::IntoResponse
 };
 
+use tower_http::services::ServeDir;
+
 pub mod routers;
+
+#[derive(Debug)]
+struct ServerConfig {
+    ip: [u8; 4],
+    port: u16,
+    submission_id: String,
+}
+
+static CONFIG: Lazy<ServerConfig> = Lazy::new(|| {
+    let config = Config::builder()
+        .add_source(config::File::with_name("config.toml"))
+        .build()
+        .unwrap();
+
+    dbg!(ServerConfig {
+        ip: config.get::<[u8; 4]>("ip").unwrap(),
+        port: config.get::<u16>("port").unwrap(),
+        submission_id: config.get_string("submission_id").unwrap(),
+    })
+});
 
 #[tokio::main]
 async fn main() {
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .init();
+
     let app = axum::Router::new()
+        .nest_service("/", ServeDir::new("static"))
         .nest("/connect.php", routers::connect_router::new_connect_router())
         .layer(axum::middleware::from_fn(append_headers));
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+
+    let addr = SocketAddr::from((CONFIG.ip, CONFIG.port));
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
+
+    tracing::debug!("Server listening on {}", addr);
     axum::serve(listener, app).await.unwrap();
 }
 
@@ -23,7 +57,6 @@ async fn append_headers(
 ) -> impl IntoResponse {
     let mut response = next.run(request).await; 
     let headers = response.headers_mut(); 
-    let submission_id = "65b54162aa2cfc5a3dea55fe";
-    headers.insert("x-cse356", submission_id.parse().unwrap());
+    headers.insert("x-cse356", CONFIG.submission_id.parse().unwrap());
     response  
 }

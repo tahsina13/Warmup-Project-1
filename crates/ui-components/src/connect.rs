@@ -9,10 +9,16 @@ struct GameProps {
 #[component]
 fn Home(cx: Scope) -> Element {
     cx.render(rsx! {
+        head {
+            link { rel: "stylesheet", href: "/connect.css" }
+        }
         div {
             display: "flex",
             flex_direction: "column",
-            h1 { "Connect 4" }
+            h1 { 
+                class: "my-title",
+                "Connect 4" 
+            }
             form {
                 action: "/connect.php",
                 method: "POST",

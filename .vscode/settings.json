@@ -1,0 +1,6 @@
+{
+    "rust-analyzer.linkedProjects": [
+        ".\\crates\\ui-components\\Cargo.toml",
+        ".\\crates\\axum-server\\Cargo.toml"
+    ]
+}
