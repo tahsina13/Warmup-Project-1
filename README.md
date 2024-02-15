@@ -3,8 +3,7 @@
 Example config.toml:
 
 ```TOML
-ip = [0, 0, 0, 0]
+ip = [127, 0, 0, 1]
 submission_id = "foobarbooblaz1234"
 http_port = 80
-https_port = 443
 ```

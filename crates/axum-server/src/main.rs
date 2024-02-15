@@ -16,7 +16,7 @@ pub mod routers;
 #[derive(Debug)]
 struct ServerConfig {
     ip: [u8; 4],
-    port: u16,
+    http_port: u16,
     submission_id: String,
 }
 
@@ -28,7 +28,7 @@ static CONFIG: Lazy<ServerConfig> = Lazy::new(|| {
 
     dbg!(ServerConfig {
         ip: config.get::<[u8; 4]>("ip").unwrap(),
-        port: config.get::<u16>("port").unwrap(),
+        http_port: config.get::<u16>("http_port").unwrap(),
         submission_id: config.get_string("submission_id").unwrap(),
     })
 });
@@ -44,7 +44,7 @@ async fn main() {
         .nest("/connect.php", routers::connect_router::new_connect_router())
         .layer(axum::middleware::from_fn(append_headers));
 
-    let addr = SocketAddr::from((CONFIG.ip, CONFIG.port));
+    let addr = SocketAddr::from((CONFIG.ip, CONFIG.http_port));
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
 
     tracing::debug!("Server listening on {}", addr);
