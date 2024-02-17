@@ -9,7 +9,7 @@ use tower_http::services::ServeDir;
 use tower_sessions::{MemoryStore, SessionManagerLayer};
 
 pub mod routers;
-use routers::*; 
+use routers::*;
 
 #[derive(Debug)]
 struct ServerConfig {
@@ -25,9 +25,9 @@ static CONFIG: Lazy<ServerConfig> = Lazy::new(|| {
         .unwrap();
 
     dbg!(ServerConfig {
-        ip: config.get::<[u8; 4]>("ip").unwrap(),
-        http_port: config.get::<u16>("http_port").unwrap(),
-        submission_id: config.get_string("submission_id").unwrap(),
+        ip: config.get("ip").unwrap(),
+        http_port: config.get("http_port").unwrap(),
+        submission_id: config.get("submission_id").unwrap(),
     })
 });
 
@@ -43,8 +43,11 @@ async fn main() {
     let app = axum::Router::new()
         .nest_service("/", ServeDir::new("static"))
         .nest("/connect.php", connect_router::new_connect_router())
-        .nest("/battleship.php", battleship_router::new_battleship_router())
-        .nest("/ttt.php",ttt_router::new_ttt_router())
+        .nest(
+            "/battleship.php",
+            battleship_router::new_battleship_router(),
+        )
+        .nest("/ttt.php", ttt_router::new_ttt_router())
         .layer(axum::middleware::from_fn(append_headers))
         .layer(session_layer);
 

@@ -24,8 +24,11 @@ async fn get_form_handler() -> Html<String> {
 async fn post_form_handler(Form(form): Form<StartGameForm>) -> Html<String> {
     if form.name.is_some() {
         let board = form.board.unwrap_or_else(|| "".to_string());
-        Html(ui_components::ttt::accept_from_html(form.name.unwrap(), board))
+        Html(ui_components::ttt::accept_from_html(
+            form.name.unwrap(),
+            board,
+        ))
     } else {
         Html(ui_components::ttt::get_form_html())
-    } 
+    }
 }

@@ -1,42 +1,37 @@
+#![allow(clippy::needless_range_loop)]
+
 // code for tic-tac-toe game
 use dioxus::prelude::*;
 use rand::Rng;
+use std::fmt;
+
+
 #[derive(Debug, Clone, PartialEq)]
 struct Board {
-    chips: [[String; 3]; 3]
+    chips: [[String; 3]; 3],
 }
 
 impl Board {
     fn new() -> Self {
-        Board { chips: Default::default() }
+        Board {
+            chips: Default::default(),
+        }
     }
     fn from(encoding: &str) -> Self {
         let mut chips: [[String; 3]; 3] = Default::default();
         let chars = encoding.chars().collect::<Vec<char>>();
         let mut idx = 0;
-        for (i, value) in chars.iter().enumerate() {
-            if *value == ' ' {
+        for &value in chars.iter() {
+            if value == ' ' {
                 idx += 1;
-            }else{
-                chips[idx/3][idx%3] = value.to_string();
+            } else {
+                chips[idx / 3][idx % 3] = value.to_string();
             }
         }
-        Board { chips } 
+        Board { chips }
     }
 
-    fn to_string(&self) -> String {
-        let mut encoded: String = String::new();
-        for i in 0..3 {
-            for j in 0..3 {
-                encoded.push_str(&self.chips[i][j]);
-                encoded.push(' ');
-            }
-        }
-        encoded.pop();
-        encoded
-    }
-
-    fn is_full (&self) -> bool {
+    fn is_full(&self) -> bool {
         for i in 0..3 {
             for j in 0..3 {
                 if self.chips[i][j].is_empty() {
@@ -56,18 +51,18 @@ impl Board {
 
     fn has_win(&self) -> Option<&str> {
         // across, down, diagonal
-        const DX: [i32; 4] = [0, -1, -1,-1]; 
-        const DY: [i32; 4] = [-1, 0, 1,-1]; 
+        const DX: [i32; 4] = [0, -1, -1, -1];
+        const DY: [i32; 4] = [-1, 0, 1, -1];
         for i in 0..3 {
             for j in 0..3 {
                 if self.chips[i][j].is_empty() {
                     continue;
                 }
                 for k in 0..DX.len() {
-                    let mut count = 0; 
+                    let mut count = 0;
                     for l in 0..3 {
-                        let (nx, ny) = ((i as i32)+DX[k]*l, (j as i32)+DY[k]*l); 
-                        let in_bounds = 0 <= nx && nx < 3 && 0 <= ny && ny < 3;
+                        let (nx, ny) = ((i as i32) + DX[k] * l, (j as i32) + DY[k] * l);
+                        let in_bounds = (0..3).contains(&nx) && (0..3).contains(&ny);
                         if !in_bounds {
                             break;
                         }
@@ -80,8 +75,22 @@ impl Board {
                     }
                 }
             }
-        } 
+        }
         None
+    }
+}
+
+impl fmt::Display for Board {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut encoded: String = String::new();
+        for i in 0..3 {
+            for j in 0..3 {
+                encoded.push_str(&self.chips[i][j]);
+                encoded.push(' ');
+            }
+        }
+        encoded.pop();
+        write!(f, "{}", encoded)
     }
 }
 
@@ -134,11 +143,11 @@ fn Game(cx: Scope<GameProps>) -> Element {
             let mut board = cx.props.board.clone();
             match board.make_move(i, j, "X") {
                 Ok(()) => states[i][j] = board.to_string(),
-                Err(_) => continue
-            } 
+                Err(_) => continue,
+            }
         }
     }
-    
+
     cx.render(rsx! {
         form {
             id: "game-form",
@@ -153,16 +162,16 @@ fn Game(cx: Scope<GameProps>) -> Element {
                         tr {
                             for (j, state) in row.iter().enumerate() {
                                 rsx! {
-                                    if cx.props.board.chips[i][j].as_str().is_empty() {
+                                    if cx.props.board.chips[i][j].is_empty() {
                                         rsx! {
                                             td {
                                                 width: "50px",
                                                 height: "50px",
-                                                border: "1px solid black", 
+                                                border: "1px solid black",
                                                 button {
                                                     form: "game-form",
-                                                    r#type: "submit", 
-                                                    name: "board", 
+                                                    r#type: "submit",
+                                                    name: "board",
                                                     style: "width: 100%; height: 100%",
                                                     value: "{state}",
                                                     "X"
@@ -171,10 +180,10 @@ fn Game(cx: Scope<GameProps>) -> Element {
                                         }
                                     }else{
                                         rsx! {
-                                            td { 
+                                            td {
                                                 width: "50px",
                                                 height: "50px",
-                                                border: "1px solid black", 
+                                                border: "1px solid black",
                                                 text_align: "center",
                                                 cx.props.board.chips[i][j].as_str()
                                             }
@@ -184,7 +193,7 @@ fn Game(cx: Scope<GameProps>) -> Element {
                             }
                         }
                     }
-                }   
+                }
             }
         }
     })
@@ -198,7 +207,7 @@ fn Play(cx: Scope<PlayProps>) -> Element {
         "" => Board::new(),
         "        " => Board::new(),
         encoding => {
-            let mut board = Board::from(encoding); 
+            let mut board = Board::from(encoding);
             let mut rng = rand::thread_rng();
             let mut positions = Vec::new();
             for i in 0..3 {
@@ -215,16 +224,16 @@ fn Play(cx: Scope<PlayProps>) -> Element {
             }
             board
         }
-    }; 
+    };
 
     match board.has_win() {
         Some(win) => {
             if win == "X" {
-                return cx.render(rsx! { PlayAgain { state: "You won!" } }); 
+                return cx.render(rsx! { PlayAgain { state: "You won!" } });
             } else {
                 return cx.render(rsx! { PlayAgain { state: "I won!" } });
             }
-        },
+        }
         None => {
             if board.is_full() {
                 return cx.render(rsx! { PlayAgain { state: "WINNER: NONE.  A STRANGE GAME.  THE ONLY WINNING MOVE IS NOT TO PLAY." } });
@@ -243,7 +252,7 @@ fn PlayAgain<'a>(cx: Scope<'a, PlayAgainProps<'a>>) -> Element {
         div {
             p { "{cx.props.state}" }
             if cx.props.state != "WINNER: NONE.  A STRANGE GAME.  THE ONLY WINNING MOVE IS NOT TO PLAY." {
-                rsx!{    
+                rsx!{
                     form {
                         action: "/ttt.php",
                         method: "POST",
@@ -264,11 +273,11 @@ pub fn get_form_html() -> String {
     )
 }
 
-pub fn accept_from_html(name: String, encoding:String) -> String {
-    let mut app = VirtualDom::new_with_props(Play, PlayProps { name, encoding});
-    let _ = app.rebuild();      
+pub fn accept_from_html(name: String, encoding: String) -> String {
+    let mut app = VirtualDom::new_with_props(Play, PlayProps { name, encoding });
+    let _ = app.rebuild();
     format!(
-        "<!DOCTYPE html><html lang='en'>{}</html", 
+        "<!DOCTYPE html><html lang='en'>{}</html",
         dioxus_ssr::render(&app)
     )
 }
