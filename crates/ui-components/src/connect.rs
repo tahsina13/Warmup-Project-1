@@ -206,9 +206,9 @@ fn Play(cx: Scope<PlayProps>) -> Element {
     match board.has_win() {
         Some(win) => {
             if win == "X" {
-                return cx.render(rsx! { PlayAgain { state: "You Win!" } }); 
+                return cx.render(rsx! { PlayAgain { state: "You won!" } }); 
             } else {
-                return cx.render(rsx! { PlayAgain { state: "I Won!" } });
+                return cx.render(rsx! { PlayAgain { state: "I won!" } });
             }
         },
         None => {
