@@ -45,8 +45,8 @@ impl Board {
     }
 
     fn is_full(&self) -> bool {
-        for row in self.chips.iter() {
-            if row[0].is_empty() {
+        for i in 0..5 {
+            if self.chips[i][0].is_empty() {
                 return false;
             }
         }
@@ -107,19 +107,13 @@ fn Home(cx: Scope) -> Element {
         head {
             link { rel: "stylesheet", href: "/connect.css" }
         }
-        div {
-            display: "flex",
-            flex_direction: "column",
-            h1 {
-                class: "my-title",
-                "Connect 4"
-            }
+        body {
             form {
                 action: "/connect.php",
                 method: "POST",
-                label { r#for: "name", "Name: "}
+                label { r#for: "name", "Name:"}
                 input { id: "name", name: "name", r#type: "text", required: true }
-                input { r#type: "submit", value: "Start game" }
+                input { r#type: "submit", value: "Submit" }
             }
         }
     })
