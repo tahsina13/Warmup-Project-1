@@ -1,3 +1,3 @@
-pub mod ttt;
-pub mod connect;
 pub mod battleship;
+pub mod connect;
+pub mod ttt;

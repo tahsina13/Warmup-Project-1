@@ -89,15 +89,15 @@ fn Home(cx: Scope) -> Element {
         div {
             display: "flex",
             flex_direction: "column",
-            h1 { 
+            h1 {
                 class: "my-title",
-                "Connect 4" 
+                "Connect 4"
             }
             form {
                 action: "/connect.php",
                 method: "POST",
                 label { r#for: "name", "Name: "}
-                input { id: "name", name: "name", r#type: "text", required: true } 
+                input { id: "name", name: "name", r#type: "text", required: true }
                 input { r#type: "submit", value: "Start" }
             }
         }
@@ -115,15 +115,18 @@ fn Play(cx: Scope<PlayProps>) -> Element {
 
 pub fn get_form_html() -> String {
     let mut app = VirtualDom::new(Home);
-    let _ = app.rebuild();     
-    format!("<!DOCTYPE html><html lang='en'>{}</html", dioxus_ssr::render(&app))
+    let _ = app.rebuild();
+    format!(
+        "<!DOCTYPE html><html lang='en'>{}</html",
+        dioxus_ssr::render(&app)
+    )
 }
 
 pub fn accept_from_html(name: String) -> String {
-    let mut app = VirtualDom::new_with_props(
-        Play,
-        PlayProps { name }
-    );
+    let mut app = VirtualDom::new_with_props(Play, PlayProps { name });
     let _ = app.rebuild();      
-    format!("<!DOCTYPE html><html lang='en'>{}</html", dioxus_ssr::render(&app))
+    format!(
+        "<!DOCTYPE html><html lang='en'>{}</html", 
+        dioxus_ssr::render(&app)
+    )
 }

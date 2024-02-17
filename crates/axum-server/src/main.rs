@@ -1,15 +1,12 @@
 use std::net::SocketAddr;
 
-use config::Config; 
+use config::Config;
 use once_cell::sync::Lazy;
 
-use axum::{
-    extract::Request, 
-    middleware::Next, 
-    response::IntoResponse
-};
+use axum::{extract::Request, middleware::Next, response::IntoResponse};
 
 use tower_http::services::ServeDir;
+use tower_sessions::{MemoryStore, SessionManagerLayer};
 
 pub mod routers;
 
@@ -39,10 +36,18 @@ async fn main() {
         .with_max_level(tracing::Level::DEBUG)
         .init();
 
+    let session_store = MemoryStore::default();
+    let session_layer = SessionManagerLayer::new(session_store);
+
     let app = axum::Router::new()
         .nest_service("/", ServeDir::new("static"))
-        .nest("/connect.php", routers::connect_router::new_connect_router())
-        .layer(axum::middleware::from_fn(append_headers));
+        .nest(
+            "/connect.php",
+            routers::connect_router::new_connect_router(),
+        )
+        .nest("/battleship.php", routers::battleship_router::new())
+        .layer(axum::middleware::from_fn(append_headers))
+        .layer(session_layer);
 
     let addr = SocketAddr::from((CONFIG.ip, CONFIG.http_port));
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
@@ -51,12 +56,9 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
-async fn append_headers(
-    request: Request,
-    next: Next
-) -> impl IntoResponse {
-    let mut response = next.run(request).await; 
-    let headers = response.headers_mut(); 
+async fn append_headers(request: Request, next: Next) -> impl IntoResponse {
+    let mut response = next.run(request).await;
+    let headers = response.headers_mut();
     headers.insert("x-cse356", CONFIG.submission_id.parse().unwrap());
-    response  
+    response
 }
