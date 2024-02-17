@@ -213,7 +213,7 @@ fn Play(cx: Scope<PlayProps>) -> Element {
         },
         None => {
             if board.is_full() {
-                return cx.render(rsx! { PlayAgain { state: "Draw!" } });
+                return cx.render(rsx! { PlayAgain { state: "Draw" } });
             }
         }
     }
