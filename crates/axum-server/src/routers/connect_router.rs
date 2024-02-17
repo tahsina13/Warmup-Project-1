@@ -7,7 +7,8 @@ use serde::Deserialize;
 
 #[derive(Deserialize)]
 struct StartGameForm {
-    name: String,
+    name: Option<String>,
+    board: Option<String>,
 }
 
 pub fn new_connect_router() -> axum::Router {
@@ -21,5 +22,10 @@ async fn get_form_handler() -> Html<String> {
 }
 
 async fn post_form_handler(Form(form): Form<StartGameForm>) -> Html<String> {
-    Html(ui_components::connect::accept_from_html(form.name))
+    if form.name.is_some() {
+        let board = form.board.unwrap_or_else(|| "".to_string());
+        Html(ui_components::connect::accept_from_html(form.name.unwrap(), board))
+    } else {
+        Html(ui_components::connect::get_form_html())
+    } 
 }

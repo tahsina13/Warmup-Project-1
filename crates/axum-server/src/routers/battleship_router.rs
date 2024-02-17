@@ -12,8 +12,9 @@ struct GameForm {
     reset: Option<String>,
 }
 
-pub fn new() -> axum::Router {
-    axum::Router::new().route("/", get(get_form_handler).post(post_form_handler))
+pub fn new_battleship_router() -> axum::Router {
+    axum::Router::new()
+        .route("/", get(get_form_handler).post(post_form_handler))
 }
 
 async fn get_form_handler() -> Html<&'static str> {

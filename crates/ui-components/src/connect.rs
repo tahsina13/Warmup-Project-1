@@ -1,12 +1,17 @@
 // code for connect4 game
 use dioxus::prelude::*;
+use rand::prelude::*;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 struct Board {
     chips: [[String; 7]; 5]
 }
 
 impl Board {
+    fn new() -> Self {
+        Board { chips: Default::default() }
+    }
+
     fn from(encoding: &str) -> Self {
         let mut chips: [[String; 7]; 5] = Default::default();
         let rows: Vec<&str> = encoding.split('.').collect();
@@ -37,6 +42,15 @@ impl Board {
             }
         }
         Err("Column is full".to_string())
+    }
+
+    fn is_full(&self) -> bool {
+        for row in self.chips.iter() {
+            if row[0].is_empty() {
+                return false;
+            }
+        }
+        true
     }
 
     fn has_win(&self) -> Option<&str> {
@@ -72,12 +86,19 @@ impl Board {
 
 #[derive(Debug, Clone, PartialEq, Props)]
 struct GameProps {
-    board: String
+    name: String,
+    board: Board,
 }
 
 #[derive(Debug, Clone, PartialEq, Props)]
 struct PlayProps {
     name: String,
+    encoding: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Props)]
+struct PlayAgainProps<'a> {
+    state: &'a str,
 }
 
 #[component]
@@ -98,7 +119,70 @@ fn Home(cx: Scope) -> Element {
                 method: "POST",
                 label { r#for: "name", "Name: "}
                 input { id: "name", name: "name", r#type: "text", required: true }
-                input { r#type: "submit", value: "Start" }
+                input { r#type: "submit", value: "Start game" }
+            }
+        }
+    })
+}
+
+#[component]
+fn Game(cx: Scope<GameProps>) -> Element {
+    let mut states: [String; 7] = Default::default();
+    for i in 0..7 {
+        let mut board = cx.props.board.clone();
+        match board.make_move(i, "X") {
+            Ok(()) => states[i] = board.to_string(),
+            Err(_) => continue
+        } 
+    }
+    
+    cx.render(rsx! {
+        form {
+            id: "game-form",
+            action: "/connect.php",
+            method: "POST",
+            input { r#type: "hidden", name: "name", value: "{cx.props.name}" }
+        }
+        table {
+            thead {
+                tr {
+                    states.iter().map(|state| {
+                        rsx! {
+                            th {
+                                if !state.is_empty() {
+                                    rsx! {
+                                        button { 
+                                            form: "game-form",
+                                            r#type: "submit", 
+                                            name: "board", 
+                                            value: "{state}",
+                                            "X"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    })
+                }
+            }
+            tbody {
+                (0..5).map(|i| {
+                    rsx! {
+                        tr {
+                            (0..7).map(|j| {
+                                rsx! {
+                                    td { 
+                                        width: "50px",
+                                        height: "50px",
+                                        border: "1px solid black", 
+                                        text_align: "center",
+                                        cx.props.board.chips[i][j].as_str() 
+                                    }
+                                }
+                            })
+                        }
+                    }
+                })
             }
         }
     })
@@ -106,10 +190,57 @@ fn Home(cx: Scope) -> Element {
 
 #[component]
 fn Play(cx: Scope<PlayProps>) -> Element {
-    let name = &cx.props.name;
-    let now = chrono::Utc::now().to_rfc2822();
+    let name = cx.props.name.to_string();
+    let date = chrono::Utc::now().format("%Y-%m-%d").to_string();
+    let board = match cx.props.encoding.as_str() {
+        "" => Board::new(),
+        encoding => {
+            let mut board = Board::from(encoding); 
+            let mut rng = rand::thread_rng();
+            let mut cols = vec![]; 
+            for i in 0..7 {
+                if board.chips[0][i].is_empty() {
+                    cols.push(i);
+                }
+            }
+            let col = cols.choose(&mut rng).unwrap();
+            board.make_move(*col, "O").expect("Invalid move");  
+            board
+        }
+    }; 
+
+    match board.has_win() {
+        Some(win) => {
+            if win == "X" {
+                return cx.render(rsx! { PlayAgain { state: "You Win!" } }); 
+            } else {
+                return cx.render(rsx! { PlayAgain { state: "I Won!" } });
+            }
+        },
+        None => {
+            if board.is_full() {
+                return cx.render(rsx! { PlayAgain { state: "Draw!" } });
+            }
+        }
+    }
+
     cx.render(rsx! {
-        p { "Hello {name}, {now}" }
+        p { "Hello {name}, {date}" }
+        Game { name: name, board: board }
+    })
+}
+
+#[component]
+fn PlayAgain<'a>(cx: Scope<'a, PlayAgainProps<'a>>) -> Element {
+    cx.render(rsx! {
+        div {
+            p { "{cx.props.state}" }
+            form {
+                action: "/connect.php",
+                method: "POST",
+                input { r#type: "submit", value: "Play again" }
+            }
+        }
     })
 }
 
@@ -122,8 +253,10 @@ pub fn get_form_html() -> String {
     )
 }
 
-pub fn accept_from_html(name: String) -> String {
-    let mut app = VirtualDom::new_with_props(Play, PlayProps { name });
+pub fn accept_from_html(name: String, encoding: String) -> String {
+    let mut app = VirtualDom::new_with_props(
+        Play, PlayProps { name, encoding }
+    );
     let _ = app.rebuild();      
     format!(
         "<!DOCTYPE html><html lang='en'>{}</html", 
