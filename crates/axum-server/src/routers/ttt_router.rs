@@ -24,5 +24,5 @@ async fn get_handler(Query(query): Query<StartGameForm>) -> Html<String> {
         Html(ui_components::ttt::accept_from_html(query.name.unwrap(), board))
     } else {
         Html(ui_components::ttt::get_form_html())
-    } 
+    }
 }
