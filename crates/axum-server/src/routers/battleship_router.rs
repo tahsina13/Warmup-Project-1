@@ -3,13 +3,20 @@ use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use tower_sessions::Session;
 
+use axum::{
+    body::{Bytes, Body},
+    extract::{FromRequest, Request, State},
+};
+use axum_typed_multipart::{FieldData, TryFromMultipart, TypedMultipart};
+use http_body_util::BodyExt;
+
 use rand::Rng;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, TryFromMultipart)]
 struct GameForm {
     name: Option<String>,
     r#move: Option<String>,
-    reset: Option<String>,
+    play_again: Option<String>,
 }
 
 pub fn new_battleship_router() -> axum::Router {
@@ -40,14 +47,36 @@ const NAME_KEY: &str = "name";
 const MOVES_KEY: &str = "moves_left";
 const BOARD_KEY: &str = "board";
 
-async fn post_form_handler(session: Session, Form(form): Form<GameForm>) -> Html<String> {
+async fn post_form_handler(session: Session, req: Request<Body>) -> Html<String> {
+    let (parts, body) = req.into_parts();
+
+    let bytes = body.collect().await.unwrap().to_bytes();
+    let body_1 = Body::from(bytes.clone());
+    let body_2 = Body::from(bytes.clone());
+
+    let req = Request::from_parts(parts.clone(), body_1);
+
+    let req_2 = Request::from_parts(parts, body_2);
+
+    let mut form;
+    if let Ok(Form(f)) = Form::<GameForm>::from_request(req, &()).await {
+        form = f;
+    } else if let Ok(TypedMultipart(f)) = TypedMultipart::<GameForm>::from_request(req_2, &()).await {
+        form = f;
+    } else {
+        return Html("Failed to parse request body".into());
+    }
+
+
+
+
     //if let Form(form) = Form::<StartGameForm>::from_request(req).await
     let time_formatted = Utc::now().format("%Y-%m-%d");
 
     // process name
     if let Some(name) = form.name {
         session.insert(NAME_KEY, name).await.unwrap();
-    } else if form.reset.is_some() {
+    } else if form.play_again.is_some() {
         // must reset move and board before loading it for rendering
         let _: Option<i32> = session.remove(MOVES_KEY).await.unwrap();
         let _: Option<Vec<Vec<Tile>>> = session.remove(BOARD_KEY).await.unwrap();
@@ -134,13 +163,13 @@ async fn post_form_handler(session: Session, Form(form): Form<GameForm>) -> Html
 
     let play_again = if total_hits == max_hits {
         r#"You win!
-<form method="post">
-    <button type="submit" name="reset">Play again</button>
+<form action="battleship.php" method="post">
+    <button type="submit" name="play_again">Play again</button>
 </form>"#
     } else if moves_left == 0 {
         r#"You lose!
-<form method="post">
-    <button type="submit" name="reset">Play again</button>
+<form action="battleship.php" method="post">
+    <button type="submit" name="play_again">Play again</button>
 </form>"#
     } else {
         ""

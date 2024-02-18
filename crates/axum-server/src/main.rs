@@ -4,6 +4,13 @@ use config::Config;
 use once_cell::sync::Lazy;
 
 use axum::{extract::Request, middleware::Next, response::IntoResponse};
+use axum::{
+    body::{Body, Bytes},
+    http::StatusCode,
+    response::Response,
+};
+
+use http_body_util::BodyExt;
 
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
@@ -53,6 +60,7 @@ async fn main() {
         .nest("/ttt.php", ttt_router::new_ttt_router())
         .layer(axum::middleware::from_fn(append_headers))
         .layer(TraceLayer::new_for_http())
+        .layer(axum::middleware::from_fn(print_request_response))
         .layer(session_layer);
 
     let addr = SocketAddr::from((CONFIG.ip, CONFIG.http_port));
@@ -67,4 +75,43 @@ async fn append_headers(request: Request, next: Next) -> impl IntoResponse {
     let headers = response.headers_mut();
     headers.insert("x-cse356", CONFIG.submission_id.parse().unwrap());
     response
+}
+
+async fn print_request_response(
+    req: Request,
+    next: Next,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    let (parts, body) = req.into_parts();
+    let bytes = buffer_and_print("request", body).await?;
+    let req = Request::from_parts(parts, Body::from(bytes));
+
+    let res = next.run(req).await;
+
+    //let (parts, body) = res.into_parts();
+    //let bytes = buffer_and_print("response", body).await?;
+    //let res = Response::from_parts(parts, Body::from(bytes));
+
+    Ok(res)
+}
+
+async fn buffer_and_print<B>(direction: &str, body: B) -> Result<Bytes, (StatusCode, String)>
+where
+    B: axum::body::HttpBody<Data = Bytes>,
+    B::Error: std::fmt::Display,
+{
+    let bytes = match body.collect().await {
+        Ok(collected) => collected.to_bytes(),
+        Err(err) => {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!("failed to read {direction} body: {err}"),
+            ));
+        }
+    };
+
+    if let Ok(body) = std::str::from_utf8(&bytes) {
+        tracing::debug!("{direction} body = {body:?}");
+    }
+
+    Ok(bytes)
 }
