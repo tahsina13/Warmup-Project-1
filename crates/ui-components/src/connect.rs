@@ -40,7 +40,7 @@ impl Board {
     }
 
     fn is_full(&self) -> bool {
-        for i in 0..5 {
+        for i in 0..7 {
             if self.chips[0][i].is_empty() {
                 return false;
             }

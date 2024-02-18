@@ -109,6 +109,7 @@ struct PlayProps {
 
 #[derive(Debug, Clone, PartialEq, Props)]
 struct PlayAgainProps<'a> {
+    name: String,
     state: &'a str,
 }
 
@@ -121,7 +122,7 @@ fn Home(cx: Scope) -> Element {
         body {
             form {
                 action: "/ttt.php",
-                method: "POST",
+                method: "GET",
                 label { r#for: "name", "Name: "}
                 input { id: "name", name: "name", r#type: "text", required: true }
                 input { r#type: "submit", value: "Submit" }
@@ -142,14 +143,8 @@ fn Game(cx: Scope<GameProps>) -> Element {
             }
         }
     }
-
+    let is_end = cx.props.board.has_win() != None || cx.props.board.is_full();
     cx.render(rsx! {
-        form {
-            id: "game-form",
-            action: "/ttt.php",
-            method: "POST",
-            input { r#type: "hidden", name: "name", value: "{cx.props.name}" }
-        }
         table {
             tbody {
                 for (i, row) in states.iter().enumerate() {
@@ -157,19 +152,17 @@ fn Game(cx: Scope<GameProps>) -> Element {
                         tr {
                             for (j, state) in row.iter().enumerate() {
                                 rsx! {
-                                    if cx.props.board.chips[i][j].is_empty() {
+                                    if cx.props.board.chips[i][j].as_str().is_empty() && !is_end{
                                         rsx! {
                                             td {
                                                 width: "50px",
                                                 height: "50px",
                                                 border: "1px solid black",
-                                                button {
-                                                    form: "game-form",
-                                                    r#type: "submit",
-                                                    name: "board",
-                                                    style: "width: 100%; height: 100%",
-                                                    value: "{state}",
-                                                    "X"
+                                                a {
+                                                    href: "/ttt.php?name={cx.props.name}&board={state}",
+
+                                                    style: "width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;",
+                                                    " "
                                                 }
                                             }
                                         }
@@ -188,6 +181,19 @@ fn Game(cx: Scope<GameProps>) -> Element {
                             }
                         }
                     }
+                }
+            }
+        }
+    })
+}
+#[component]
+fn PlayAgain<'a>(cx: Scope<'a, PlayAgainProps<'a>>) -> Element {
+    cx.render(rsx! {
+        div {
+            p { "{cx.props.state}" }
+            if cx.props.state != "WINNER: NONE.  A STRANGE GAME.  THE ONLY WINNING MOVE IS NOT TO PLAY." {
+                rsx!{    
+                    a { href: "/ttt.php?name={cx.props.name}", "Play Again" }
                 }
             }
         }
@@ -221,42 +227,24 @@ fn Play(cx: Scope<PlayProps>) -> Element {
         }
     };
 
-    match board.has_win() {
-        Some(win) => {
-            if win == "X" {
-                return cx.render(rsx! { PlayAgain { state: "You won!" } });
-            } else {
-                return cx.render(rsx! { PlayAgain { state: "I won!" } });
-            }
-        }
-        None => {
-            if board.is_full() {
-                return cx.render(rsx! { PlayAgain { state: "WINNER: NONE.  A STRANGE GAME.  THE ONLY WINNING MOVE IS NOT TO PLAY." } });
-            }
-        }
-    }
-
     cx.render(rsx! {
         p { "Hello {name}, {date}" }
-        Game { name: name, board: board }
-    })
-}
-
-#[component]
-fn PlayAgain<'a>(cx: Scope<'a, PlayAgainProps<'a>>) -> Element {
-    cx.render(rsx! {
-        div {
-            p { "{cx.props.state}" }
-            if cx.props.state != "WINNER: NONE.  A STRANGE GAME.  THE ONLY WINNING MOVE IS NOT TO PLAY." {
-                rsx!{
-                    form {
-                        action: "/ttt.php",
-                        method: "POST",
-                        input { r#type: "submit", value: "Play again" }
-                    }
-                }
+        if board.has_win() == Some("X") {
+            rsx!{
+                PlayAgain { state: "You won!" , name: cx.props.name.to_string()}
             }
+        } else if board.has_win() == Some("O") {
+            rsx!{
+                PlayAgain { state: "I won!" , name: cx.props.name.to_string()}
+            }
+        } else if board.is_full() {
+            rsx!{
+                PlayAgain { state: "WINNER: NONE.  A STRANGE GAME.  THE ONLY WINNING MOVE IS NOT TO PLAY.", name: cx.props.name.to_string() }
+            }
+            
         }
+        
+        Game { name: name, board: board }
     })
 }
 
