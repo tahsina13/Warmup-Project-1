@@ -1,4 +1,5 @@
 // code for connect4 game
+#![allow(clippy::needless_range_loop)]
 use dioxus::prelude::*;
 use rand::prelude::*;
 use std::fmt;

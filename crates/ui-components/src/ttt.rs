@@ -1,10 +1,8 @@
-#![allow(clippy::needless_range_loop)]
-
 // code for tic-tac-toe game
+#![allow(clippy::needless_range_loop)]
 use dioxus::prelude::*;
 use rand::Rng;
 use std::fmt;
-
 
 #[derive(Debug, Clone, PartialEq)]
 struct Board {
