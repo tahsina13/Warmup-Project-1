@@ -9,7 +9,7 @@ use serde::Deserialize;
 use axum_typed_multipart::{TryFromMultipart, TypedMultipart};
 
 #[derive(Debug, Clone, Deserialize, TryFromMultipart)]
-struct StartGameForm {
+struct GameForm{
     name: String,
     #[serde(default)]
     #[form_data(default)]
@@ -30,10 +30,10 @@ async fn post_form_handler(req: Request<Body>) -> Html<String> {
     if let Some(content_type) = req.headers().get("content-type") {
         let content_type = content_type.to_str().unwrap();
         if content_type.contains("application/x-www-form-urlencoded") {
-            let Form(form) = Form::<StartGameForm>::from_request(req, &()).await.unwrap();
+            let Form(form) = Form::<GameForm>::from_request(req, &()).await.unwrap();
             Html(ui_components::connect::accept_from_html(form.name, form.board))
         } else if content_type.contains("multipart/form-data") {
-            let TypedMultipart(form) = TypedMultipart::<StartGameForm>::from_request(req, &()).await.unwrap();
+            let TypedMultipart(form) = TypedMultipart::<GameForm>::from_request(req, &()).await.unwrap();
             Html(ui_components::connect::accept_from_html(form.name, form.board))
         } else {
             Html("Unsupported content type".to_string())
@@ -42,3 +42,4 @@ async fn post_form_handler(req: Request<Body>) -> Html<String> {
         Html("No content type".to_string())
     }
 }
+
