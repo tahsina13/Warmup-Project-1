@@ -10,11 +10,14 @@ struct Board {
 }
 
 impl Board {
+    const DRAW_MESG: &'static str = "WINNER: NONE. A STRANGE GAME. THE ONLY WINNING MOVE IS NOT TO PLAY.";
+
     fn new() -> Self {
         Board {
             chips: Default::default(),
         }
     }
+
     fn from(encoding: &str) -> Self {
         let mut chips: [[String; 3]; 3] = Default::default();
         let chars = encoding.chars().collect::<Vec<char>>();
@@ -86,7 +89,7 @@ impl Board {
             Some("X") => "You won!",
             Some("O") => "I won!",
             Some(_) => panic!("Invalid state"),
-            None => if self.is_full() { "WINNER: NONE. A STRANGE GAME. THE ONLY WINNING MOVE IS NOT TO PLAY." } else { "" }
+            None => if self.is_full() { Board::DRAW_MESG } else { "" }
         } 
     }
 }
@@ -170,7 +173,6 @@ fn Game(cx: Scope<GameProps>) -> Element {
                                                 border: "1px solid black",
                                                 a {
                                                     href: "/ttt.php?name={cx.props.name}&board={state}",
-
                                                     style: "width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;",
                                                     " "
                                                 }
@@ -233,7 +235,7 @@ fn Play(cx: Scope<PlayProps>) -> Element {
         }
         p { "Hello {name}, {date}" }
         Game { name: name, board: board }
-        if !state.is_empty() && state != "WINNER: NONE. A STRANGE GAME. THE ONLY WINNING MOVE IS NOT TO PLAY." {
+        if !state.is_empty() && state != Board::DRAW_MESG {
             rsx! {
                 a { href: "/ttt.php?name={cx.props.name}", "Play Again" }
             }
