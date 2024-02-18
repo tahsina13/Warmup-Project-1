@@ -51,8 +51,8 @@ impl Board {
 
     fn has_win(&self) -> Option<&str> {
         // across, down, diagonal
-        const DX: [i32; 3] = [0, -1, -1];
-        const DY: [i32; 3] = [-1, 0, -1];
+        const DX: [i32; 4] = [0, 1, 1, 1];
+        const DY: [i32; 4] = [1, 0, 1, -1];
         for i in 0..5 {
             for j in 0..7 {
                 if self.chips[i][j].is_empty() {
