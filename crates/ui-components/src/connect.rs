@@ -1,5 +1,3 @@
-#![allow(clippy::needless_range_loop)]
-
 // code for connect4 game
 use dioxus::prelude::*;
 use rand::prelude::*;
@@ -43,7 +41,7 @@ impl Board {
 
     fn is_full(&self) -> bool {
         for i in 0..5 {
-            if self.chips[i][0].is_empty() {
+            if self.chips[0][i].is_empty() {
                 return false;
             }
         }
@@ -105,6 +103,7 @@ struct PlayProps {
 
 #[derive(Debug, Clone, PartialEq, Props)]
 struct PlayAgainProps<'a> {
+    name: &'a str,
     state: &'a str,
 }
 
@@ -138,52 +137,54 @@ fn Game(cx: Scope<GameProps>) -> Element {
     }
 
     cx.render(rsx! {
-        form {
-            id: "game-form",
-            action: "/connect.php",
-            method: "POST",
-            input { r#type: "hidden", name: "name", value: "{cx.props.name}" }
-        }
-        table {
-            thead {
-                tr {
-                    states.iter().map(|state| {
-                        rsx! {
-                            th {
-                                if !state.is_empty() {
-                                    rsx! {
-                                        button {
-                                            form: "game-form",
-                                            r#type: "submit",
-                                            name: "board",
-                                            value: "{state}",
-                                            "X"
+        body {
+            form {
+                id: "game-form",
+                action: "/connect.php",
+                method: "POST",
+                input { r#type: "hidden", name: "name", value: "{cx.props.name}" }
+            }
+            table {
+                thead {
+                    tr {
+                        states.iter().enumerate().map(|(i, state)| {
+                            rsx! {
+                                th {
+                                    if !state.is_empty() {
+                                        rsx! {
+                                            button {
+                                                form: "game-form",
+                                                r#type: "submit",
+                                                name: "board",
+                                                value: "{state}",
+                                                "{i+1}"
+                                            }
                                         }
                                     }
                                 }
                             }
+                        })
+                    }
+                }
+                tbody {
+                    (0..5).map(|i| {
+                        rsx! {
+                            tr {
+                                (0..7).map(|j| {
+                                    rsx! {
+                                        td {
+                                            width: "50px",
+                                            height: "50px",
+                                            border: "1px solid black",
+                                            text_align: "center",
+                                            cx.props.board.chips[i][j].as_str()
+                                        }
+                                    }
+                                })
+                            }
                         }
                     })
                 }
-            }
-            tbody {
-                (0..5).map(|i| {
-                    rsx! {
-                        tr {
-                            (0..7).map(|j| {
-                                rsx! {
-                                    td {
-                                        width: "50px",
-                                        height: "50px",
-                                        border: "1px solid black",
-                                        text_align: "center",
-                                        cx.props.board.chips[i][j].as_str()
-                                    }
-                                }
-                            })
-                        }
-                    }
-                })
             }
         }
     })
@@ -192,7 +193,7 @@ fn Game(cx: Scope<GameProps>) -> Element {
 #[component]
 fn Play(cx: Scope<PlayProps>) -> Element {
     let name = cx.props.name.to_string();
-    let date = chrono::Utc::now().format("%Y-%m-%d").to_string();
+    let date = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string(); 
     let board = match cx.props.encoding.as_str() {
         "" => Board::new(),
         encoding => {
@@ -209,37 +210,25 @@ fn Play(cx: Scope<PlayProps>) -> Element {
             board
         }
     };
-
-    match board.has_win() {
-        Some(win) => {
-            if win == "X" {
-                return cx.render(rsx! { PlayAgain { state: "You won!" } }); 
-            } else {
-                return cx.render(rsx! { PlayAgain { state: "I won!" } });
-            }
-        }
-        None => {
-            if board.is_full() {
-                return cx.render(rsx! { PlayAgain { state: "Draw" } });
-            }
-        }
-    }
+    let state = match board.has_win() {
+        Some(win) => if win == "X" { "You win!" } else { "I win!" },
+        None => if board.is_full() { "Draw" } else { "" } 
+    }; 
 
     cx.render(rsx! {
         p { "Hello {name}, {date}" }
+        if !state.is_empty() {
+            rsx! { p { "{state}" } }
+        }
         Game { name: name, board: board }
-    })
-}
-
-#[component]
-fn PlayAgain<'a>(cx: Scope<'a, PlayAgainProps<'a>>) -> Element {
-    cx.render(rsx! {
-        div {
-            p { "{cx.props.state}" }
-            form {
-                action: "/connect.php",
-                method: "POST",
-                input { r#type: "submit", value: "Play again" }
+        if !state.is_empty() {
+            rsx! {
+                form {
+                    action: "/connect.php",
+                    method: "POST",
+                    input { r#type: "hidden", name: "name", value: "{cx.props.name}" }
+                    input { r#type: "submit", value: "Play again" }
+                }
             }
         }
     })

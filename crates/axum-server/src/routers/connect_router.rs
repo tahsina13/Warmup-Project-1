@@ -7,7 +7,7 @@ use serde::Deserialize;
 
 #[derive(Deserialize)]
 struct StartGameForm {
-    name: Option<String>,
+    name: String,
     board: Option<String>,
 }
 
@@ -22,13 +22,6 @@ async fn get_form_handler() -> Html<String> {
 }
 
 async fn post_form_handler(Form(form): Form<StartGameForm>) -> Html<String> {
-    if form.name.is_some() {
-        let board = form.board.unwrap_or("".to_owned());
-        Html(ui_components::connect::accept_from_html(
-            form.name.unwrap(),
-            board,
-        ))
-    } else {
-        Html(ui_components::connect::get_form_html())
-    }
+    let board = form.board.unwrap_or("".to_owned());
+    Html(ui_components::connect::accept_from_html(form.name, board))
 }
