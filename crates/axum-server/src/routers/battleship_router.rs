@@ -1,5 +1,5 @@
 use axum::{response::Html, routing::get, Form};
-use chrono::Local;
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use tower_sessions::Session;
 
@@ -42,7 +42,7 @@ const BOARD_KEY: &str = "board";
 
 async fn post_form_handler(session: Session, Form(form): Form<GameForm>) -> Html<String> {
     //if let Form(form) = Form::<StartGameForm>::from_request(req).await
-    let time_formatted = Local::now().format("%Y-%m-%d");
+    let time_formatted = Utc::now().format("%Y-%m-%d");
 
     // process name
     if let Some(name) = form.name {

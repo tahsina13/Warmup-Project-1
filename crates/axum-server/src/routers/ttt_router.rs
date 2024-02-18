@@ -13,7 +13,7 @@ pub fn new_ttt_router() -> axum::Router {
 
 async fn get_handler(Query(query): Query<StartGameForm>) -> Html<String> {
     if query.name.is_some() {
-        let board = query.board.unwrap_or_else(|| "".to_string());
+        let board = query.board.unwrap_or("".to_string());
         Html(ui_components::ttt::accept_from_html(
             query.name.unwrap(),
             board,

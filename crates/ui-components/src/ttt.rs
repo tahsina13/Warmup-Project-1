@@ -162,7 +162,7 @@ fn Game(cx: Scope<GameProps>) -> Element {
                                                     href: "/ttt.php?name={cx.props.name}&board={state}",
 
                                                     style: "width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;",
-                                                    "x"
+                                                    " "
                                                 }
                                             }
                                         }
