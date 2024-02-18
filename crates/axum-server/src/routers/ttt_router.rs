@@ -12,13 +12,11 @@ pub fn new_ttt_router() -> axum::Router {
 }
 
 async fn get_handler(Query(query): Query<StartGameForm>) -> Html<String> {
-    if query.name.is_some() {
-        let board = query.board.unwrap_or("".to_string());
-        Html(ui_components::ttt::accept_from_html(
-            query.name.unwrap(),
-            board,
-        ))
-    } else {
-        Html(ui_components::ttt::get_form_html())
+    match query.name {
+        Some(name) => {
+            let board = query.board.unwrap_or_default();
+            Html(ui_components::ttt::accept_from_html(name, board))
+        }
+        None => Html(ui_components::ttt::get_form_html()),
     }
 }

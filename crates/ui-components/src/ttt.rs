@@ -10,7 +10,8 @@ struct Board {
 }
 
 impl Board {
-    const DRAW_MESG: &'static str = "WINNER: NONE. A STRANGE GAME. THE ONLY WINNING MOVE IS NOT TO PLAY.";
+    const DRAW_MESG: &'static str =
+        "WINNER: NONE. A STRANGE GAME. THE ONLY WINNING MOVE IS NOT TO PLAY.";
 
     fn new() -> Self {
         Board {
@@ -89,8 +90,14 @@ impl Board {
             Some("X") => "You won!",
             Some("O") => "I won!",
             Some(_) => panic!("Invalid state"),
-            None => if self.is_full() { Board::DRAW_MESG } else { "" }
-        } 
+            None => {
+                if self.is_full() {
+                    Board::DRAW_MESG
+                } else {
+                    ""
+                }
+            }
+        }
     }
 }
 
@@ -140,7 +147,7 @@ fn Home(cx: Scope) -> Element {
                 input { id: "name", name: "name", r#type: "text", required: true }
                 input { r#type: "submit", value: "Submit" }
             }
-        } 
+        }
     })
 }
 
@@ -156,7 +163,7 @@ fn Game(cx: Scope<GameProps>) -> Element {
             }
         }
     }
-    let is_end = cx.props.board.has_win() != None || cx.props.board.is_full();
+    let is_end = cx.props.board.has_win().is_some() || cx.props.board.is_full();
     cx.render(rsx! {
         table {
             tbody {
@@ -165,7 +172,7 @@ fn Game(cx: Scope<GameProps>) -> Element {
                         tr {
                             for (j, state) in row.iter().enumerate() {
                                 rsx! {
-                                    if cx.props.board.chips[i][j].as_str().is_empty() && !is_end{
+                                    if cx.props.board.chips[i][j].is_empty() && !is_end{
                                         rsx! {
                                             td {
                                                 width: "50px",
@@ -178,7 +185,7 @@ fn Game(cx: Scope<GameProps>) -> Element {
                                                 }
                                             }
                                         }
-                                    }else{
+                                    } else {
                                         rsx! {
                                             td {
                                                 width: "50px",
@@ -202,7 +209,7 @@ fn Game(cx: Scope<GameProps>) -> Element {
 #[component]
 fn Play(cx: Scope<PlayProps>) -> Element {
     let name = cx.props.name.to_string();
-    let date = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string(); 
+    let date = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
     let board = match cx.props.encoding.as_str() {
         "" => Board::new(),
         "        " => Board::new(),
@@ -227,7 +234,7 @@ fn Play(cx: Scope<PlayProps>) -> Element {
             board
         }
     };
-    let state = board.get_state(); 
+    let state = board.get_state();
 
     cx.render(rsx! {
         if !state.is_empty() {

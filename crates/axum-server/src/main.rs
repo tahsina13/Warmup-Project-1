@@ -4,14 +4,11 @@ use config::Config;
 use once_cell::sync::Lazy;
 
 use axum::{
-    extract::Request, 
-    middleware::Next, 
-    response::IntoResponse
-};
-use axum::{
     body::{Body, Bytes},
     http::StatusCode,
+    response::Response,
 };
+use axum::{extract::Request, middleware::Next};
 
 use http_body_util::BodyExt;
 
@@ -57,10 +54,13 @@ async fn main() {
         .nest_service("/", ServeDir::new("static"))
         .nest("/ttt.php", ttt_router::new_ttt_router())
         .nest("/connect.php", connect_router::new_connect_router())
-        .nest("/battleship.php", battleship_router::new_battleship_router())
+        .nest(
+            "/battleship.php",
+            battleship_router::new_battleship_router(),
+        )
         .layer(axum::middleware::from_fn(append_headers))
-        .layer(TraceLayer::new_for_http())
         .layer(axum::middleware::from_fn(print_request_response))
+        .layer(TraceLayer::new_for_http())
         .layer(session_layer);
 
     let addr = SocketAddr::from((CONFIG.ip, CONFIG.http_port));
@@ -70,7 +70,7 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
-async fn append_headers(request: Request, next: Next) -> impl IntoResponse {
+async fn append_headers(request: Request, next: Next) -> Response<Body> {
     let mut response = next.run(request).await;
     let headers = response.headers_mut();
     headers.insert("x-cse356", CONFIG.submission_id.parse().unwrap());
@@ -80,7 +80,7 @@ async fn append_headers(request: Request, next: Next) -> impl IntoResponse {
 async fn print_request_response(
     req: Request,
     next: Next,
-) -> Result<impl IntoResponse, (StatusCode, String)> {
+) -> Result<Response<Body>, (StatusCode, String)> {
     let (parts, body) = req.into_parts();
     let bytes = buffer_and_print("request", body).await?;
     let req = Request::from_parts(parts, Body::from(bytes));
@@ -110,7 +110,8 @@ where
     };
 
     if let Ok(body) = std::str::from_utf8(&bytes) {
-        tracing::debug!("{direction} body = {body:?}");
+        let count = body.len();
+        tracing::debug!("{direction} body: {count} bytes = {body:?}");
     }
 
     Ok(bytes)
