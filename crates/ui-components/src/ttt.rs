@@ -79,6 +79,15 @@ impl Board {
         }
         None
     }
+
+    fn get_state(&self) -> &'static str {
+        match self.has_win() {
+            Some("X") => "You won!",
+            Some("O") => "I won!",
+            Some(_) => panic!("Invalid state"),
+            None => if self.is_full() { "WINNER: NONE.  A STRANGE GAME.  THE ONLY WINNING MOVE IS NOT TO PLAY." } else { "" }
+        } 
+    }
 }
 
 impl fmt::Display for Board {
@@ -186,65 +195,48 @@ fn Game(cx: Scope<GameProps>) -> Element {
         }
     })
 }
-#[component]
-fn PlayAgain<'a>(cx: Scope<'a, PlayAgainProps<'a>>) -> Element {
-    cx.render(rsx! {
-        div {
-            p { "{cx.props.state}" }
-            if cx.props.state != "WINNER: NONE.  A STRANGE GAME.  THE ONLY WINNING MOVE IS NOT TO PLAY." {
-                rsx!{    
-                    a { href: "/ttt.php?name={cx.props.name}", "Play Again" }
-                }
-            }
-        }
-    })
-}
 
 #[component]
 fn Play(cx: Scope<PlayProps>) -> Element {
     let name = cx.props.name.to_string();
-    let date = chrono::Utc::now().format("%Y-%m-%d").to_string();
+    let date = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string(); 
     let board = match cx.props.encoding.as_str() {
         "" => Board::new(),
         "        " => Board::new(),
         encoding => {
             let mut board = Board::from(encoding);
-            let mut rng = rand::thread_rng();
-            let mut positions = Vec::new();
-            for i in 0..3 {
-                for j in 0..3 {
-                    if board.chips[i][j].is_empty() {
-                        positions.push((i, j));
+            if board.get_state().is_empty() {
+                let mut rng = rand::thread_rng();
+                let mut positions = Vec::new();
+                for i in 0..3 {
+                    for j in 0..3 {
+                        if board.chips[i][j].is_empty() {
+                            positions.push((i, j));
+                        }
                     }
                 }
-            }
-            // make a random move
-            if !positions.is_empty() {
-                let (i, j) = positions[rng.gen_range(0..positions.len())];
-                let _ = board.make_move(i, j, "O");
+                // make a random move
+                if !positions.is_empty() {
+                    let (i, j) = positions[rng.gen_range(0..positions.len())];
+                    let _ = board.make_move(i, j, "O");
+                }
             }
             board
         }
     };
+    let state = board.get_state(); 
 
     cx.render(rsx! {
         p { "Hello {name}, {date}" }
-        if board.has_win() == Some("X") {
-            rsx!{
-                PlayAgain { state: "You won!" , name: cx.props.name.to_string()}
-            }
-        } else if board.has_win() == Some("O") {
-            rsx!{
-                PlayAgain { state: "I won!" , name: cx.props.name.to_string()}
-            }
-        } else if board.is_full() {
-            rsx!{
-                PlayAgain { state: "WINNER: NONE.  A STRANGE GAME.  THE ONLY WINNING MOVE IS NOT TO PLAY.", name: cx.props.name.to_string() }
-            }
-            
+        if !state.is_empty() {
+            rsx! { p { "{state}" } }
         }
-        
         Game { name: name, board: board }
+        if !state.is_empty() && state != "WINNER: NONE.  A STRANGE GAME.  THE ONLY WINNING MOVE IS NOT TO PLAY." {
+            rsx! {
+                a { href: "/ttt.php?name={cx.props.name}", "Play Again" }
+            }
+        }
     })
 }
 

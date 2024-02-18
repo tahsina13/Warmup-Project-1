@@ -77,6 +77,15 @@ impl Board {
         }
         None
     }
+
+    fn get_state(&self) -> &'static str {
+        match self.has_win() {
+            Some("X") => "You win!",
+            Some("O") => "I win!",
+            Some(_) => panic!("Invalid state"),
+            None => if self.is_full() { "Draw" } else { "" } 
+        }
+    } 
 }
 
 impl fmt::Display for Board {
@@ -99,12 +108,6 @@ struct GameProps {
 struct PlayProps {
     name: String,
     encoding: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Props)]
-struct PlayAgainProps<'a> {
-    name: &'a str,
-    state: &'a str,
 }
 
 #[component]
@@ -198,22 +201,21 @@ fn Play(cx: Scope<PlayProps>) -> Element {
         "" => Board::new(),
         encoding => {
             let mut board = Board::from(encoding);
-            let mut rng = rand::thread_rng();
-            let mut cols = vec![];
-            for i in 0..7 {
-                if board.chips[0][i].is_empty() {
-                    cols.push(i);
+            if board.get_state().is_empty() {
+                let mut rng = rand::thread_rng();
+                let mut cols = vec![];
+                for i in 0..7 {
+                    if board.chips[0][i].is_empty() {
+                        cols.push(i);
+                    }
                 }
+                let col = cols.choose(&mut rng).unwrap();
+                board.make_move(*col, "O").expect("Invalid move");
             }
-            let col = cols.choose(&mut rng).unwrap();
-            board.make_move(*col, "O").expect("Invalid move");
             board
         }
     };
-    let state = match board.has_win() {
-        Some(win) => if win == "X" { "You win!" } else { "I win!" },
-        None => if board.is_full() { "Draw" } else { "" } 
-    }; 
+    let state = board.get_state(); 
 
     cx.render(rsx! {
         p { "Hello {name}, {date}" }
@@ -227,7 +229,7 @@ fn Play(cx: Scope<PlayProps>) -> Element {
                     action: "/connect.php",
                     method: "POST",
                     input { r#type: "hidden", name: "name", value: "{cx.props.name}" }
-                    input { r#type: "submit", value: "Play again" }
+                    input { r#type: "submit", value: "Play Again" }
                 }
             }
         }
