@@ -6,7 +6,8 @@ use once_cell::sync::Lazy;
 use axum::{extract::Request, middleware::Next, response::IntoResponse};
 
 use tower_http::services::ServeDir;
-use tower_sessions::{MemoryStore, SessionManagerLayer};
+use tower_http::trace::TraceLayer;
+use tower_sessions::{cookie::time::Duration, Expiry, MemoryStore, SessionManagerLayer};
 
 pub mod routers;
 use routers::*;
@@ -38,7 +39,9 @@ async fn main() {
         .init();
 
     let session_store = MemoryStore::default();
-    let session_layer = SessionManagerLayer::new(session_store);
+    let session_layer = SessionManagerLayer::new(session_store)
+        .with_secure(false)
+        .with_expiry(Expiry::OnInactivity(Duration::seconds(3600)));
 
     let app = axum::Router::new()
         .nest_service("/", ServeDir::new("static"))
@@ -49,6 +52,7 @@ async fn main() {
         )
         .nest("/ttt.php", ttt_router::new_ttt_router())
         .layer(axum::middleware::from_fn(append_headers))
+        .layer(TraceLayer::new_for_http())
         .layer(session_layer);
 
     let addr = SocketAddr::from((CONFIG.ip, CONFIG.http_port));

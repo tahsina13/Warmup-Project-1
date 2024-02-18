@@ -25,6 +25,9 @@ impl Board {
             } else {
                 chips[idx / 3][idx % 3] = value.to_string();
             }
+            if idx > 8 {
+                break;
+            }
         }
         Board { chips }
     }
@@ -83,7 +86,7 @@ impl Board {
             Some("X") => "You won!",
             Some("O") => "I won!",
             Some(_) => panic!("Invalid state"),
-            None => if self.is_full() { "WINNER: NONE.  A STRANGE GAME.  THE ONLY WINNING MOVE IS NOT TO PLAY." } else { "" }
+            None => if self.is_full() { "WINNER: NONE. A STRANGE GAME. THE ONLY WINNING MOVE IS NOT TO PLAY." } else { "" }
         } 
     }
 }
@@ -225,12 +228,12 @@ fn Play(cx: Scope<PlayProps>) -> Element {
     let state = board.get_state(); 
 
     cx.render(rsx! {
-        p { "Hello {name}, {date}" }
         if !state.is_empty() {
             rsx! { p { "{state}" } }
         }
+        p { "Hello {name}, {date}" }
         Game { name: name, board: board }
-        if !state.is_empty() && state != "WINNER: NONE.  A STRANGE GAME.  THE ONLY WINNING MOVE IS NOT TO PLAY." {
+        if !state.is_empty() && state != "WINNER: NONE. A STRANGE GAME. THE ONLY WINNING MOVE IS NOT TO PLAY." {
             rsx! {
                 a { href: "/ttt.php?name={cx.props.name}", "Play Again" }
             }
