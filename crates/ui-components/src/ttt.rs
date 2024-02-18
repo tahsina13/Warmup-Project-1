@@ -143,7 +143,7 @@ fn Game(cx: Scope<GameProps>) -> Element {
             }
         }
     }
-    let isEnd = cx.props.board.has_win() != None || cx.props.board.is_full();
+    let is_end = cx.props.board.has_win() != None || cx.props.board.is_full();
     cx.render(rsx! {
         table {
             tbody {
@@ -152,7 +152,7 @@ fn Game(cx: Scope<GameProps>) -> Element {
                         tr {
                             for (j, state) in row.iter().enumerate() {
                                 rsx! {
-                                    if cx.props.board.chips[i][j].as_str().is_empty() && !isEnd{
+                                    if cx.props.board.chips[i][j].as_str().is_empty() && !is_end{
                                         rsx! {
                                             td {
                                                 width: "50px",
