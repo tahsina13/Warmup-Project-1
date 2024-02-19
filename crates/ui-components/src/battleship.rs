@@ -121,13 +121,13 @@ pub fn make_board_page(name: String, board: Vec<Vec<Tile>>, moves_left: i32) -> 
 
     let play_again = if total_hits == max_hits {
         r#"You win!
-<form action="battleship.php" method="post">
-    <button type="submit" name="play_again">Play again</button>
+<form action="/battleship.php" method="POST">
+    <input type="submit" name="play_again" value="Play again">
 </form>"#
     } else if moves_left == 0 {
         r#"You lose!
-<form action="battleship.php" method="post">
-    <button type="submit" name="play_again">Play again</button>
+<form action="/battleship.php" method="POST">
+    <input type="submit" name="play_again" value="Play again">
 </form>"#
     } else {
         ""

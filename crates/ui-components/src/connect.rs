@@ -12,28 +12,20 @@ struct Board {
 impl Board {
     fn new() -> Self {
         Board {
-            chips: [(); 5].map(|_| [(); 7].map(|_| " ".to_owned())),
+            chips: Default::default(),
         }
     }
 
     fn from(encoding: &str) -> Self {
-        println!("|{}|", encoding);
-        let encoding = encoding.replace('\r', "");
-        let encoding = encoding.replace('\n', "");
-        let mut sp = encoding.split('.');
-        let mut rows = vec![];
-        for _row in 0..5 {
-            let row: String = sp.next().unwrap().chars().step_by(2).collect();
-            rows.push(row);
-        }
-        let encoding = rows.join(".");
-        println!("|{}|", encoding);
-
         let mut chips: [[String; 7]; 5] = Default::default();
+        let encoding = encoding.replace('\n', "");
         let rows: Vec<&str> = encoding.split('.').collect();
-        for (i, &row) in rows.iter().enumerate() {
-            for (j, col) in row.chars().enumerate() {
-                chips[i][j] = col.to_string();
+        for (i, row) in rows.iter().enumerate() {
+            let cols: Vec<&str> = row.split(' ').collect();
+            for (j, col) in cols.iter().enumerate() {
+                if !col.is_empty() {
+                    chips[i][j] = col.to_string();
+                }
             }
         }
         Board { chips }
@@ -41,7 +33,7 @@ impl Board {
 
     fn make_move(&mut self, col: usize, player: &str) -> Result<(), String> {
         for i in (0..5).rev() {
-            if self.chips[i][col] == " " {
+            if self.chips[i][col].is_empty() {
                 self.chips[i][col] = player.to_string();
                 return Ok(());
             }
@@ -51,7 +43,7 @@ impl Board {
 
     fn is_full(&self) -> bool {
         for i in 0..7 {
-            if self.chips[0][i] == " " {
+            if self.chips[0][i].is_empty() {
                 return false;
             }
         }
@@ -64,7 +56,7 @@ impl Board {
         const DY: [i32; 4] = [1, 0, 1, -1];
         for i in 0..5 {
             for j in 0..7 {
-                if self.chips[i][j] == " " {
+                if self.chips[i][j].is_empty() {
                     continue;
                 }
                 for k in 0..DX.len() {
@@ -93,15 +85,9 @@ impl Board {
             Some("X") => "You won!",
             Some("O") => "I won!",
             Some(_) => panic!("Invalid state"),
-            None => {
-                if self.is_full() {
-                    "Draw"
-                } else {
-                    ""
-                }
-            }
+            None => if self.is_full() { "Draw" } else { "" } 
         }
-    }
+    } 
 }
 
 impl fmt::Display for Board {
@@ -212,7 +198,7 @@ fn Game(cx: Scope<GameProps>) -> Element {
 #[component]
 fn Play(cx: Scope<PlayProps>) -> Element {
     let name = cx.props.name.to_string();
-    let date = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
+    let date = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string(); 
     let board = match cx.props.encoding.as_str() {
         "" => Board::new(),
         encoding => {
@@ -221,7 +207,7 @@ fn Play(cx: Scope<PlayProps>) -> Element {
                 let mut rng = rand::thread_rng();
                 let mut cols = vec![];
                 for i in 0..7 {
-                    if board.chips[0][i] == " " {
+                    if board.chips[0][i].is_empty() {
                         cols.push(i);
                     }
                 }
@@ -231,7 +217,7 @@ fn Play(cx: Scope<PlayProps>) -> Element {
             board
         }
     };
-    let state = board.get_state();
+    let state = board.get_state(); 
 
     cx.render(rsx! {
         p { "Hello {name}, {date}" }
