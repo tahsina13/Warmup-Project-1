@@ -45,3 +45,6 @@ rust-project.json
 
 # Configuration files for axum server
 config.toml
+
+# log files
+logs/*

@@ -9,8 +9,12 @@ use axum::{
     response::Response,
 };
 use axum::{extract::Request, middleware::Next};
+use chrono::Local;
 
 use http_body_util::BodyExt;
+
+use tracing_subscriber::fmt;
+use tracing_subscriber::layer::SubscriberExt;
 
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
@@ -41,9 +45,16 @@ static CONFIG: Lazy<ServerConfig> = Lazy::new(|| {
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .init();
+    let file_appender = tracing_appender::rolling::never("./logs", Local::now().to_rfc3339());
+    let (file_writer, _guard) = tracing_appender::non_blocking(file_appender);
+    tracing::subscriber::set_global_default(
+        fmt::Subscriber::builder()
+            .with_max_level(tracing::Level::DEBUG)
+            .finish()
+            .with(fmt::Layer::default().with_writer(file_writer))
+            .with(fmt::Layer::default().with_writer(std::io::stdout)),
+    )
+    .expect("Unable to set global tracing subscriber");
 
     let session_store = MemoryStore::default();
     let session_layer = SessionManagerLayer::new(session_store)

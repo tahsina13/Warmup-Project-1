@@ -85,9 +85,15 @@ impl Board {
             Some("X") => "You won!",
             Some("O") => "I won!",
             Some(_) => panic!("Invalid state"),
-            None => if self.is_full() { "Draw" } else { "" } 
+            None => {
+                if self.is_full() {
+                    "Draw"
+                } else {
+                    ""
+                }
+            }
         }
-    } 
+    }
 }
 
 impl fmt::Display for Board {
@@ -198,7 +204,7 @@ fn Game(cx: Scope<GameProps>) -> Element {
 #[component]
 fn Play(cx: Scope<PlayProps>) -> Element {
     let name = cx.props.name.to_string();
-    let date = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string(); 
+    let date = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
     let board = match cx.props.encoding.as_str() {
         "" => Board::new(),
         encoding => {
@@ -217,7 +223,7 @@ fn Play(cx: Scope<PlayProps>) -> Element {
             board
         }
     };
-    let state = board.get_state(); 
+    let state = board.get_state();
 
     cx.render(rsx! {
         p { "Hello {name}, {date}" }
